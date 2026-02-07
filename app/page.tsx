@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-import { Wifi, ArrowDown, ArrowUp, Globe, Play, Loader2 } from "lucide-react";
+import { useNDT7 } from "@/hooks/useNDT7";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useNDT7 } from "@/hooks/useNDT7";
+import { Wifi, ArrowDown, ArrowUp, Globe, Activity } from "lucide-react";
 
 export default function Home() {
   const {
@@ -17,114 +16,124 @@ export default function Home() {
   } = useNDT7();
 
   const isTesting =
-    status === "download" || status === "upload" || status === "starting";
+    status === "starting" || status === "download" || status === "upload";
 
   return (
-    <main className='min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 font-sans'>
+    <main className='min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 font-sans'>
       {/* Header */}
-      <div className='mb-10 text-center'>
-        <h1 className='text-4xl font-bold tracking-tighter mb-2'>
-          Open<span className='text-blue-500'>Speed</span>
+      <div className='mb-12 text-center space-y-2'>
+        <h1 className='text-4xl md:text-5xl font-black tracking-tight'>
+          SPEED<span className='text-cyan-500'>TEST</span>
         </h1>
-        <p className='text-gray-400 text-sm'>
-          Powered by Measurement Lab (M-Lab)
-        </p>
+        <p className='text-slate-400 text-sm'>Professional Network Analysis</p>
       </div>
 
-      {/* Main Gauge Area */}
-      <div className='relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center mb-8'>
-        {/* Lingkaran border */}
+      {/* Main Speed Gauge */}
+      <div className='relative w-72 h-72 mb-12 flex items-center justify-center'>
+        {/* Decorative Ring */}
         <div
-          className={`absolute inset-0 rounded-full border-4 border-gray-800 ${isTesting ? "animate-pulse" : ""}`}
+          className={`absolute inset-0 rounded-full border-[6px] border-slate-800 ${isTesting ? "animate-pulse" : ""}`}
         ></div>
+        {isTesting && (
+          <div
+            className={`absolute inset-0 rounded-full border-t-[6px] border-cyan-500 animate-spin transition-all duration-1000`}
+          ></div>
+        )}
 
-        {/* Indikator Status */}
-        <div className='text-center z-10'>
+        <div className='text-center z-10 flex flex-col items-center'>
           {status === "idle" && (
-            <Wifi className='w-16 h-16 text-gray-700 mx-auto mb-2' />
-          )}
-          {status === "starting" && (
-            <span className='text-sm text-yellow-500'>Mencari Server...</span>
+            <Wifi className='w-20 h-20 text-slate-700 mb-4' />
           )}
 
-          {(status === "download" ||
-            status === "upload" ||
-            status === "complete") && (
+          {status !== "idle" && (
             <>
-              <div className='text-6xl font-black tabular-nums'>
+              <div className='text-7xl font-black tabular-nums tracking-tighter text-white'>
                 {status === "upload"
                   ? uploadSpeed.toFixed(1)
                   : downloadSpeed.toFixed(1)}
               </div>
-              <div className='text-sm font-bold text-gray-500 mt-2 uppercase tracking-widest'>
-                Mbps {status === "upload" ? "Upload" : "Download"}
+              <div className='flex items-center gap-2 mt-2 text-cyan-400 font-bold text-sm uppercase tracking-widest bg-cyan-950/30 px-3 py-1 rounded-full'>
+                {status === "upload" ? (
+                  <ArrowUp className='w-4 h-4' />
+                ) : (
+                  <ArrowDown className='w-4 h-4' />
+                )}
+                {status === "upload" ? "Upload" : "Download"}
               </div>
             </>
           )}
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl mb-8'>
-        {/* Download Card */}
-        <Card className='bg-gray-900 border-gray-800 text-white'>
+      {/* Stats Cards */}
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-3xl mb-12'>
+        {/* Download Result */}
+        <Card className='bg-slate-900/50 border-slate-800'>
           <CardContent className='flex flex-col items-center justify-center p-6'>
-            <div className='flex items-center gap-2 mb-2 text-blue-400'>
-              <ArrowDown className='w-4 h-4' />{" "}
-              <span className='text-xs font-bold uppercase'>Download</span>
+            <div className='flex items-center gap-2 mb-2 text-cyan-400'>
+              <ArrowDown className='w-5 h-5' />{" "}
+              <span className='text-xs font-bold uppercase tracking-wider'>
+                Download
+              </span>
             </div>
-            <span className='text-2xl font-bold'>{downloadSpeed}</span>
+            <span className='text-3xl font-bold text-white'>
+              {downloadSpeed}{" "}
+              <span className='text-sm font-normal text-slate-500'>Mbps</span>
+            </span>
           </CardContent>
         </Card>
 
-        {/* Upload Card */}
-        <Card className='bg-gray-900 border-gray-800 text-white'>
+        {/* Upload Result */}
+        <Card className='bg-slate-900/50 border-slate-800'>
           <CardContent className='flex flex-col items-center justify-center p-6'>
             <div className='flex items-center gap-2 mb-2 text-purple-400'>
-              <ArrowUp className='w-4 h-4' />{" "}
-              <span className='text-xs font-bold uppercase'>Upload</span>
+              <ArrowUp className='w-5 h-5' />{" "}
+              <span className='text-xs font-bold uppercase tracking-wider'>
+                Upload
+              </span>
             </div>
-            <span className='text-2xl font-bold'>{uploadSpeed}</span>
+            <span className='text-3xl font-bold text-white'>
+              {uploadSpeed}{" "}
+              <span className='text-sm font-normal text-slate-500'>Mbps</span>
+            </span>
           </CardContent>
         </Card>
 
-        {/* Ping/Server Card */}
-        <Card className='bg-gray-900 border-gray-800 text-white'>
+        {/* Ping Result */}
+        <Card className='bg-slate-900/50 border-slate-800'>
           <CardContent className='flex flex-col items-center justify-center p-6'>
             <div className='flex items-center gap-2 mb-2 text-green-400'>
-              <Globe className='w-4 h-4' />{" "}
-              <span className='text-xs font-bold uppercase'>Ping / Loc</span>
-            </div>
-            <div className='text-center'>
-              <span className='text-xl font-bold'>
-                {latency > 0 ? `${latency} ms` : "--"}
+              <Activity className='w-5 h-5' />{" "}
+              <span className='text-xs font-bold uppercase tracking-wider'>
+                Ping
               </span>
-              <p className='text-[10px] text-gray-500 mt-1 max-w-[100px] truncate'>
-                {serverLocation || "Auto"}
-              </p>
             </div>
+            <span className='text-3xl font-bold text-white'>
+              {latency > 0 ? latency : "--"}{" "}
+              <span className='text-sm font-normal text-slate-500'>ms</span>
+            </span>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Location Info */}
+      <div className='mb-8 flex items-center gap-2 text-slate-500 text-sm bg-slate-900 px-4 py-2 rounded-full border border-slate-800'>
+        <Globe className='w-4 h-4' />
+        {serverLocation || "Server location will appear here"}
       </div>
 
       {/* Action Button */}
       <Button
         size='lg'
-        className={`w-48 h-14 rounded-full font-bold text-lg transition-all ${
+        className={`w-48 h-14 rounded-full font-bold text-lg transition-all shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] ${
           isTesting
-            ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-            : "bg-white text-black hover:bg-gray-200 hover:scale-105"
+            ? "bg-slate-800 text-slate-500 cursor-not-allowed shadow-none border border-slate-700"
+            : "bg-cyan-500 text-white hover:bg-cyan-400 hover:scale-105 border-0"
         }`}
         onClick={runTest}
         disabled={isTesting}
       >
-        {isTesting ? (
-          <Loader2 className='w-6 h-6 animate-spin' />
-        ) : status === "complete" ? (
-          "Tes Lagi"
-        ) : (
-          "Mulai Tes"
-        )}
+        {isTesting ? "Testing..." : "START TEST"}
       </Button>
     </main>
   );

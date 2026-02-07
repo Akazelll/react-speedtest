@@ -1,5 +1,4 @@
-import { useState, useRef } from "react";
-import ndt7 from "@m-lab/ndt7";
+import { useState } from "react";
 
 export type TestState =
   | "idle"
@@ -13,29 +12,38 @@ export const useNDT7 = () => {
   const [status, setStatus] = useState<TestState>("idle");
   const [downloadSpeed, setDownloadSpeed] = useState(0);
   const [uploadSpeed, setUploadSpeed] = useState(0);
-  const [latency, setLatency] = useState(0); // Min RTT
+  const [latency, setLatency] = useState(0);
   const [serverLocation, setServerLocation] = useState<string>("");
 
-  // Ref untuk menyimpan instance tes agar bisa di-stop jika perlu
-  const abortControllerRef = useRef<AbortController | null>(null);
-
   const runTest = async () => {
+    // 1. Cek apakah library sudah siap
+    // @ts-ignore
+    if (typeof window === "undefined" || !window.ndt7) {
+      console.error("Library ndt7 belum dimuat di window.");
+      alert("Gagal memuat script. Cek koneksi internet dan refresh halaman.");
+      return;
+    }
+
     setStatus("starting");
     setDownloadSpeed(0);
     setUploadSpeed(0);
     setLatency(0);
     setServerLocation("Mencari Server Terdekat...");
 
+    // PENTING: Gunakan path lokal ke file di folder public
+    const WORKER_PATH = "/ndt7-download-worker.js";
+    const UPLOAD_WORKER_PATH = "/ndt7-upload-worker.js";
+
     try {
-      // 1. DOWNLOAD TEST
+      // --- FASE 1: DOWNLOAD ---
       setStatus("download");
 
-      // Callback untuk update UI real-time saat download berjalan
-      await ndt7.test({
-        userAcceptedDataPolicy: true, // Wajib policy M-Lab
+      // @ts-ignore
+      await window.ndt7.test({
+        userAcceptedDataPolicy: true,
+        downloadworkerfile: WORKER_PATH,
         downloadworker: {
           onstart: (serverData: any) => {
-            // Mendapatkan info server lokasi
             if (serverData?.location?.city) {
               setServerLocation(
                 `${serverData.location.city}, ${serverData.location.country}`,
@@ -44,42 +52,46 @@ export const useNDT7 = () => {
           },
           onmeasurement: (data: any) => {
             if (data.Source === "client") {
-              // Kecepatan dalam Mbps
               const mbps = data.Data.MeanClientMbps;
               setDownloadSpeed(parseFloat(mbps.toFixed(2)));
             }
           },
           oncomplete: (data: any) => {
-            // Ambil latency (MinRTT) dari hasil akhir
             if (data?.MinRTT) {
               setLatency(Math.round(data.MinRTT));
             }
           },
+          error: (err: any) => {
+            console.error("Download Worker Error:", err);
+          },
         },
-        uploadworker: null, // Matikan upload dulu saat fase download
+        uploadworker: null,
       });
 
-      // 2. UPLOAD TEST
+      // --- FASE 2: UPLOAD ---
       setStatus("upload");
 
-      await ndt7.test({
+      // @ts-ignore
+      await window.ndt7.test({
         userAcceptedDataPolicy: true,
-        downloadworker: null, // Matikan download
+        uploadworkerfile: UPLOAD_WORKER_PATH,
+        downloadworker: null,
         uploadworker: {
           onmeasurement: (data: any) => {
             if (data.Source === "server") {
-              // Untuk upload, data speed diukur oleh server (server-side measurement)
-              // Data dikirim balik ke client via pesan websocket
               const mbps = data.Data.MeanClientMbps;
               setUploadSpeed(parseFloat(mbps.toFixed(2)));
             }
+          },
+          error: (err: any) => {
+            console.error("Upload Worker Error:", err);
           },
         },
       });
 
       setStatus("complete");
     } catch (error) {
-      console.error("NDT7 Error:", error);
+      console.error("NDT7 Fatal Error:", error);
       setStatus("error");
     }
   };

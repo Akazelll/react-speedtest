@@ -1,2 +1,9 @@
-// types/ndt7.d.ts
-declare module "@m-lab/ndt7";
+export {};
+
+declare global {
+  interface Window {
+    ndt7: {
+      test: (config: any) => Promise<number>;
+    };
+  }
+}
