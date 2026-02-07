@@ -1,54 +1,38 @@
 import { NextResponse } from "next/server";
 
+// Wajib dynamic agar tidak dicache
 export const dynamic = "force-dynamic";
 
-// Konfigurasi Server Dummy (Info Server)
-const SERVER_INFO = {
-  id: 101,
-  name: "NextJS Speed Node",
-  sponsor: "Vercel ID SG1",
-  location: "Singapore",
-  country: "Singapore",
-  host: "speedtest.yourdomain.com:8080",
-};
-
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const type = searchParams.get("type");
+  // Kita kirim chunk data 1MB-an per request
+  // Client akan melakukan loop request ini berkali-kali sampai waktu habis
+  const sizeInBytes = 1 * 1024 * 1024; // 1 MB
 
-  // 1. Endpoint untuk Info Server
-  if (type === "server") {
-    return NextResponse.json(SERVER_INFO);
-  }
+  const buffer = new Uint8Array(sizeInBytes);
+  // Isi sedikit data random agar tidak dikompresi browser
+  buffer[0] = Math.floor(Math.random() * 255);
+  buffer[sizeInBytes - 1] = Math.floor(Math.random() * 255);
 
-  // 2. Endpoint untuk Download Test
-  // User meminta 40MB data dummy
-  if (type === "download") {
-    const sizeInMB = 40;
-    const sizeInBytes = sizeInMB * 1024 * 1024;
-
-    // Kita buat buffer kosong (cepat)
-    const buffer = new Uint8Array(sizeInBytes);
-
-    return new NextResponse(buffer, {
-      headers: {
-        "Content-Type": "application/octet-stream",
-        "Cache-Control": "no-store",
-      },
-    });
-  }
-
-  return NextResponse.json({ error: "Invalid type" });
+  return new NextResponse(buffer, {
+    headers: {
+      "Content-Type": "application/octet-stream",
+      "Cache-Control": "no-store, no-cache, must-revalidate",
+    },
+  });
 }
 
 export async function POST(request: Request) {
-  // 3. Endpoint untuk Upload Test
-  // Menerima data dari client untuk menghitung durasi upload
-  // Kita baca body-nya tapi tidak disimpan agar hemat memori
-  const blob = await request.blob();
-
-  return NextResponse.json({
-    received: blob.size,
-    timestamp: Date.now(),
-  });
+  // Logic Upload: Baca stream body sampai habis
+  try {
+    const reader = request.body?.getReader();
+    if (reader) {
+      while (true) {
+        const { done } = await reader.read();
+        if (done) break;
+      }
+    }
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    return NextResponse.json({ success: false }, { status: 500 });
+  }
 }

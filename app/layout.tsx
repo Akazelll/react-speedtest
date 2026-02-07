@@ -20,7 +20,7 @@ export default function RootLayout({
       <body className={inter.className}>
         {children}
         {/* Load Library Utama dari folder public */}
-        <Script src='/ndt7.min.js' strategy='beforeInteractive' />
+        {/* <Script src='/ndt7.min.js' strategy='beforeInteractive' /> */}
       </body>
     </html>
   );

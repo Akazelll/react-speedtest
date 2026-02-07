@@ -1,67 +1,42 @@
-"use client";
+import { TestResult } from "@/hooks/useHistory";
 
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TestResult } from "@/hooks/useSpeedTest";
+export const HistoryChart = ({ data }: { data: TestResult[] }) => {
+  if (data.length === 0) return null;
 
-interface HistoryChartProps {
-  data: TestResult[];
-}
-
-export function HistoryChart({ data }: HistoryChartProps) {
-  // Kita perlu membalik urutan data agar yang lama di kiri, yang baru di kanan
-  // (Asumsi data history masuknya [terbaru, lama, lama...])
-  const chartData = [...data].reverse();
-
-  if (data.length < 2) return null; // Jangan tampilkan kalau data cuma 1 atau 0
+  // Ambil 10 data terakhir saja & balik urutannya untuk grafik (kiri ke kanan)
+  const recentData = [...data].slice(0, 10).reverse();
+  const maxSpeed = Math.max(
+    ...recentData.map((d) => Math.max(d.download, d.upload)),
+    100,
+  );
 
   return (
-    <Card className='w-full max-w-2xl mt-4'>
-      <CardHeader>
-        <CardTitle className='text-sm font-medium'>
-          Tren Kecepatan (Mbps)
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className='h-[200px] w-full'>
-          <ResponsiveContainer width='100%' height='100%'>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray='3 3' vertical={false} />
-              <XAxis
-                dataKey='date'
-                hide // Sembunyikan label bawah agar bersih
-              />
-              <YAxis
-                tickFormatter={(value) => `${value} Mbps`}
-                style={{ fontSize: "12px" }}
-              />
-              <Tooltip
-                contentStyle={{
-                  borderRadius: "8px",
-                  border: "none",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                }}
-              />
-              <Line
-                type='monotone'
-                dataKey='download'
-                stroke='#2563eb' // Blue-600
-                strokeWidth={2}
-                dot={{ fill: "#2563eb", r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+    <div className='w-full h-32 flex items-end justify-between gap-2 mt-4 px-2'>
+      {recentData.map((item) => (
+        <div
+          key={item.id}
+          className='flex flex-col items-center gap-1 flex-1 group relative'
+        >
+          {/* Tooltip */}
+          <div className='absolute bottom-full mb-2 hidden group-hover:flex flex-col bg-slate-800 text-xs p-2 rounded border border-slate-700 z-10 whitespace-nowrap'>
+            <span className='text-cyan-400'>DL: {item.download}</span>
+            <span className='text-purple-400'>UL: {item.upload}</span>
+            <span className='text-slate-400'>{item.date}</span>
+          </div>
+
+          {/* Bars */}
+          <div className='w-full flex items-end gap-0.5 h-full'>
+            <div
+              style={{ height: `${(item.download / maxSpeed) * 100}%` }}
+              className='w-1/2 bg-cyan-500/80 rounded-t-sm transition-all duration-500 hover:bg-cyan-400'
+            />
+            <div
+              style={{ height: `${(item.upload / maxSpeed) * 100}%` }}
+              className='w-1/2 bg-purple-500/80 rounded-t-sm transition-all duration-500 hover:bg-purple-400'
+            />
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      ))}
+    </div>
   );
-}
+};
